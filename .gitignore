@@ -4,11 +4,24 @@ __pycache__/
 *.pyo
 .venv/
 venv/
+*.egg-info/
+dist/
+build/
 
 # Secrets — never commit these
 .env
 .env.*
 !.env.example
+
+# Development
+.python-version
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Sphinx documentation
+docs/_build/
+docs/.doctrees/
 
 # macOS
 .DS_Store

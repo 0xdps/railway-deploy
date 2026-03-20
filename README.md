@@ -8,6 +8,20 @@ Declarative Railway deployment CLI for application services and managed infrastr
 3. Apply build/start config and environment variables
 4. Trigger deployment
 
+## Purpose
+
+`railway-deploy` is built for teams that want the speed of Railway with the
+repeatability of config-as-code.
+
+It helps answer common operational questions:
+
+- Why did this environment differ from last week?
+- Which variables/config were applied to this service?
+- Can we recreate staging quickly and consistently?
+
+By storing deploy intent in versioned YAML, teams reduce manual drift and make
+deploy behavior easier to review.
+
 ## Why this project
 
 Railway's dashboard is great for manual setup, but repeated environment provisioning and multi-service rollout can become error-prone. This tool provides an auditable, repeatable deployment process with config-as-code.
@@ -21,6 +35,20 @@ Railway's dashboard is great for manual setup, but repeated environment provisio
 - Safe output masking for sensitive keys
 - Single-service deploy mode for targeted updates
 - Compatibility script (`railway.py`) plus installable CLI command (`railway-deploy`)
+
+## Who this is for
+
+- Teams running multiple Railway services
+- Projects with staging + production environments
+- Monorepos deploying multiple services in a controlled order
+- CI/CD pipelines that need deterministic deploy commands
+
+## Typical use-cases
+
+- Bootstrap a fresh environment with infra + apps in one run
+- Deploy a single service after a targeted code change (`--service`)
+- Update config/variables without triggering build (`--no-deploy`)
+- Keep deployment definitions in pull requests and code review
 
 ## Installation
 
@@ -52,6 +80,18 @@ export RAILWAY_TOKEN=<your_token>
 
 ```bash
 railway-deploy --project <PROJECT_ID> --env staging --config examples/configs/basic.deploy.yml
+```
+
+Monorepo example:
+
+```bash
+railway-deploy --project <PROJECT_ID> --env staging --config examples/configs/monorepo.deploy.yml
+```
+
+Service-only rollout example:
+
+```bash
+railway-deploy --project <PROJECT_ID> --env staging --config examples/configs/monorepo.deploy.yml --service gateway --skip-infra
 ```
 
 ## Example files
@@ -124,6 +164,10 @@ python -m twine upload dist/*
 
 - Source docs: [docs/](docs/)
 - Read the Docs config: [.readthedocs.yaml](.readthedocs.yaml)
+- Purpose and scope: [docs/purpose.rst](docs/purpose.rst)
+- Operational use-cases: [docs/use-cases.rst](docs/use-cases.rst)
+- Deployment lifecycle: [docs/workflow.rst](docs/workflow.rst)
+- Troubleshooting: [docs/troubleshooting.rst](docs/troubleshooting.rst)
 
 ## Security
 
