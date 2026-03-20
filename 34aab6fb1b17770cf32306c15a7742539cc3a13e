@@ -1,0 +1,48 @@
+docs/troubleshooting.rst
+  2ebf4ec28e880b59 1-83
+docs/use-cases.rst
+  2ebf4ec28e880b59 23-48
+docs/index.rst
+  2ebf4ec28e880b59 6-8,13-14,17,19
+README.md
+  2ebf4ec28e880b59 11-24,39-46,48-52,85-94,167-170
+docs/configuration.rst
+  2ebf4ec28e880b59 12-15,19,21-24,28-34,47-73
+docs/README.md
+  2ebf4ec28e880b59 1-133
+docs/usage.rst
+  2ebf4ec28e880b59 4-5,22-25,27-28,37-56
+docs/requirements.txt
+  2ebf4ec28e880b59 3-5
+.gitignore
+  2ebf4ec28e880b59 7-9,16-24
+docs/purpose.rst
+  2ebf4ec28e880b59 32-48
+docs/conf.py
+  2ebf4ec28e880b59 23,25-31,33-38,40-51,53-54,56-57,59-61
+docs/_static/railway-deploy-icon.svg
+  2ebf4ec28e880b59 1-35
+docs/workflow.rst
+  2ebf4ec28e880b59 13-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.15",
+  "base_commit_sha": "34aab6fb1b17770cf32306c15a7742539cc3a13e",
+  "prompts": {
+    "2ebf4ec28e880b59": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "2350dadb-628b-45ca-a758-a07c0994ef1a",
+        "model": "copilot/auto"
+      },
+      "human_author": "Devendra Pratap Singh <dps.manit@gmail.com>",
+      "messages": [],
+      "total_additions": 540,
+      "total_deletions": 27,
+      "accepted_lines": 524,
+      "overriden_lines": 3,
+      "messages_url": "https://usegitai.com/cas/4e96db4236493aae3980d541278d616c860d41d1fd2b55d4957acf5ec56b9d6d"
+    }
+  }
+}
