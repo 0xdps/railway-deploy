@@ -38,6 +38,48 @@ sphinx-autobuild docs docs/_build/html
 DOCS_THEME=sphinx_book_theme sphinx-autobuild docs docs/_build/html
 ```
 
+## Read the Docs Builds
+
+Read the Docs does not have a dedicated `theme:` setting in `.readthedocs.yaml` for Sphinx themes. In this project, the hosted build reads the theme from `DOCS_THEME` inside `docs/conf.py`.
+
+There are two supported ways to choose the Read the Docs theme.
+
+### Option 1: Pin it in `.readthedocs.yaml`
+
+The repository currently pins the hosted theme directly in `.readthedocs.yaml` by overriding the HTML build command:
+
+```yaml
+build:
+   jobs:
+      build:
+         html:
+            - mkdir -p "$READTHEDOCS_OUTPUT/html"
+            - DOCS_THEME=pydata_sphinx_theme python -m sphinx -b html docs "$READTHEDOCS_OUTPUT/html"
+```
+
+To change the hosted theme, replace `pydata_sphinx_theme` with one of the supported values and trigger a rebuild.
+
+### Option 2: Set it in the Read the Docs dashboard
+
+If you prefer not to hardcode the hosted theme in the repo, remove the inline `DOCS_THEME=...` from `.readthedocs.yaml` and set a custom environment variable in Read the Docs:
+
+1. Open the project in Read the Docs.
+2. Go to `Admin` -> `Environment Variables`.
+3. Add or update `DOCS_THEME` with one of the supported theme names.
+4. Trigger a rebuild.
+
+Example value:
+
+```text
+DOCS_THEME=pydata_sphinx_theme
+```
+
+Notes:
+
+- If you want the variable available on pull request builds, mark it as public in Read the Docs.
+- Hardcoding the theme in `.readthedocs.yaml` is the simplest option when you want one canonical hosted theme.
+- Using the Read the Docs dashboard variable is better when different projects or environments should render the same repo with different themes.
+
 ## Available Themes
 
 The documentation supports multiple Sphinx themes:

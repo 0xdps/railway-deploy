@@ -1,5 +1,8 @@
 version: 2
 
+# Theme selection is handled in docs/conf.py via the DOCS_THEME environment
+# variable. For hosted Read the Docs builds, set DOCS_THEME in:
+# Read the Docs Admin -> Environment Variables.
 build:
   os: ubuntu-24.04
   tools:
