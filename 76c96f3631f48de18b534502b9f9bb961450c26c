@@ -1,0 +1,76 @@
+src/railway_deploy/config.py
+  2ebf4ec28e880b59 1-23
+src/railway_deploy/output.py
+  2ebf4ec28e880b59 1-38
+src/railway_deploy/clients.py
+  2ebf4ec28e880b59 1-220
+src/railway_deploy/cli.py
+  2ebf4ec28e880b59 23-82
+src/railway_deploy/__main__.py
+  2ebf4ec28e880b59 1-3
+railway.py
+  2ebf4ec28e880b59 1-4,6-9,11-20
+docs/configuration.rst
+  2ebf4ec28e880b59 1-3,5-28
+pyproject.toml
+  2ebf4ec28e880b59 26-49
+docs/index.rst
+  2ebf4ec28e880b59 1-14
+docs/usage.rst
+  2ebf4ec28e880b59 10-17,19-34
+.github/PULL_REQUEST_TEMPLATE.md
+  2ebf4ec28e880b59 1-17
+LICENSE
+  2ebf4ec28e880b59 14-21
+README.md
+  2ebf4ec28e880b59 21-140
+docs/api.rst
+  2ebf4ec28e880b59 9-32
+docs/conf.py
+  2ebf4ec28e880b59 13-26
+src/railway_deploy/templates.py
+  2ebf4ec28e880b59 1-102
+docs/requirements.txt
+  2ebf4ec28e880b59 1-2
+examples/README.md
+  2ebf4ec28e880b59 1-9,13-17,22-35
+.github/ISSUE_TEMPLATE.md
+  2ebf4ec28e880b59 11-16
+src/railway_deploy/constants.py
+  2ebf4ec28e880b59 1-8
+examples/configs/dashboards.deploy.yml
+  2ebf4ec28e880b59 1-45
+docs/installation.rst
+  2ebf4ec28e880b59 21-24
+docs/publishing.rst
+  2ebf4ec28e880b59 1-23
+src/railway_deploy/__init__.py
+  2ebf4ec28e880b59 1-5
+examples/configs/basic.deploy.yml
+  2ebf4ec28e880b59 23-45
+examples/configs/monorepo.deploy.yml
+  2ebf4ec28e880b59 14-54
+src/railway_deploy/deploy.py
+  2ebf4ec28e880b59 1-175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.15",
+  "base_commit_sha": "76c96f3631f48de18b534502b9f9bb961450c26c",
+  "prompts": {
+    "2ebf4ec28e880b59": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "2350dadb-628b-45ca-a758-a07c0994ef1a",
+        "model": "copilot/auto"
+      },
+      "human_author": "Devendra Pratap Singh <dps.manit@gmail.com>",
+      "messages": [],
+      "total_additions": 1277,
+      "total_deletions": 33,
+      "accepted_lines": 1185,
+      "overriden_lines": 7,
+      "messages_url": "https://usegitai.com/cas/e3f6f364ff8db417bc127ed8d960185c0c3bd8e75a8f945f49ff6b362b0c4d2c"
+    }
+  }
+}
