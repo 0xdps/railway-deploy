@@ -1,0 +1,24 @@
+docs/README.md
+  2ebf4ec28e880b59 41-42,44,46,66-79,82
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.15",
+  "base_commit_sha": "3be7ad4ed4f3fbb8ba36d9ca4640f088c77ce008",
+  "prompts": {
+    "2ebf4ec28e880b59": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "2350dadb-628b-45ca-a758-a07c0994ef1a",
+        "model": "copilot/auto"
+      },
+      "human_author": "Devendra Pratap Singh <dps.manit@gmail.com>",
+      "messages": [],
+      "total_additions": 25,
+      "total_deletions": 0,
+      "accepted_lines": 33,
+      "overriden_lines": 7,
+      "messages_url": "https://usegitai.com/cas/a286d8a623a34232f5c21d3ef0d5b38b492e8b32dea18215a2015de39f170dd6"
+    }
+  }
+}
