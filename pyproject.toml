@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "railway-deploy"
+version = "0.1.0"
+description = "Deploy and manage Railway services from declarative YAML config."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "railway-deploy contributors" }
+]
+keywords = ["railway", "deployment", "devops", "cli", "graphql"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Environment :: Console",
+  "Topic :: Software Development :: Build Tools",
+  "Topic :: System :: Systems Administration",
+]
+dependencies = [
+  "requests>=2.31.0",
+  "PyYAML>=6.0.1",
+  "tomli>=2.0.1; python_version < '3.11'",
+]
+
+[project.urls]
+Homepage = "https://github.com/0xdps/railway-deploy"
+Repository = "https://github.com/0xdps/railway-deploy"
+Documentation = "https://railway-deploy.readthedocs.io"
+Issues = "https://github.com/0xdps/railway-deploy/issues"
+
+[project.scripts]
+railway-deploy = "railway_deploy.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,54 @@
+project:
+  name: Example Monorepo App
+  prefix: monorepoapp
+  workspace_id: "00000000-0000-0000-0000-000000000000"
+
+infra:
+  - name: postgres
+    type: postgres
+
+services:
+  - name: core
+    railway_name: monorepoapp-core
+    repo: your-org/your-monorepo
+    branch: staging
+    dockerfile: apps/services/core/Dockerfile
+    build_command: "pnpm exec turbo run build --filter=core"
+    start_command: "pnpm run --filter=@your-scope/core start"
+    vars:
+      static:
+        NODE_ENV: production
+      references:
+        DATABASE_URL: monorepoapp-postgres.DATABASE_URL
+      common:
+        - CORE_PUBLIC_URL
+        - SESSION_SECRET
+
+  - name: gateway
+    railway_name: monorepoapp-gateway
+    repo: your-org/your-monorepo
+    branch: staging
+    dockerfile: apps/services/gateway/Dockerfile
+    build_command: "pnpm exec turbo run build --filter=gateway"
+    start_command: "pnpm run --filter=@your-scope/gateway start"
+    vars:
+      static:
+        NODE_ENV: production
+        CORE_URL: http://monorepoapp-core.railway.internal:8080
+      references:
+        DATABASE_URL: monorepoapp-postgres.DATABASE_URL
+      common:
+        - GATEWAY_PUBLIC_URL
+        - SESSION_SECRET
+
+required_vars:
+  - SESSION_SECRET
+
+soft_vars:
+  - CORE_PUBLIC_URL
+  - GATEWAY_PUBLIC_URL
+
+env_template:
+  SESSION_SECRET: "replace-me"
+  CORE_PUBLIC_URL: "https://core.example.com"
+  GATEWAY_PUBLIC_URL: "https://api.example.com"

@@ -1,0 +1,45 @@
+project:
+  name: Example Dashboards
+  prefix: dashboards
+  workspace_id: "00000000-0000-0000-0000-000000000000"
+
+infra: []
+
+services:
+  - name: dashboards
+    railway_name: dashboards-staging
+    repo: your-org/your-monorepo
+    branch: staging
+    dockerfile: deployment/Dockerfile.dashboards
+    vars:
+      common:
+        - VITE_GATEWAY_URL
+        - VITE_HOME_URL
+        - VITE_DOCS_URL
+        - VITE_ENV_TAG
+        - PUBLIC_DOCS_URL
+        - PUBLIC_ENV_TAG
+        - DOMAIN
+        - GATEWAY_INTERNAL_URL
+
+required_vars:
+  - VITE_GATEWAY_URL
+  - DOMAIN
+  - GATEWAY_INTERNAL_URL
+
+soft_vars:
+  - VITE_HOME_URL
+  - VITE_DOCS_URL
+  - VITE_ENV_TAG
+  - PUBLIC_DOCS_URL
+  - PUBLIC_ENV_TAG
+
+env_template:
+  VITE_GATEWAY_URL: "https://api.example.com"
+  VITE_HOME_URL: "https://example.com"
+  VITE_DOCS_URL: "https://docs.example.com"
+  VITE_ENV_TAG: "Staging"
+  PUBLIC_DOCS_URL: "https://docs.example.com"
+  PUBLIC_ENV_TAG: "Staging"
+  DOMAIN: "example.com"
+  GATEWAY_INTERNAL_URL: "http://your-gateway-service.railway.internal:8080"

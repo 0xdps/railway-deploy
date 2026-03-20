@@ -1,0 +1,12 @@
+# Railway Deployment Tool — Python dependencies
+# Install: pip install -r requirements.txt
+
+# HTTP client — cleaner than stdlib urllib
+requests>=2.31.0
+
+# YAML config file support
+PyYAML>=6.0.1
+
+# TOML config file support (stdlib tomllib available in Python 3.11+)
+# tomli is the backport for Python 3.8–3.10
+tomli>=2.0.1; python_version < "3.11"

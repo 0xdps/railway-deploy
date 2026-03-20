@@ -1,0 +1,45 @@
+project:
+  name: Example Basic App
+  prefix: exampleapp
+  workspace_id: "00000000-0000-0000-0000-000000000000"
+
+infra:
+  - name: postgres
+    type: postgres
+    image: ghcr.io/railwayapp-templates/postgres-ssl:18
+    wait_seconds: 15
+
+  - name: redis
+    type: redis
+    image: redis:8.2.1
+    wait_seconds: 5
+
+services:
+  - name: api
+    railway_name: exampleapp-api
+    repo: your-org/your-repo
+    branch: main
+    dockerfile: Dockerfile
+    vars:
+      static:
+        NODE_ENV: production
+        PORT: "8080"
+      references:
+        DATABASE_URL: exampleapp-postgres.DATABASE_URL
+        REDIS_URL: exampleapp-redis.REDIS_URL
+      common:
+        - APP_SECRET
+        - JWT_SECRET
+        - API_PUBLIC_URL
+
+required_vars:
+  - APP_SECRET
+  - JWT_SECRET
+
+soft_vars:
+  - API_PUBLIC_URL
+
+env_template:
+  APP_SECRET: "replace-me"
+  JWT_SECRET: "replace-me"
+  API_PUBLIC_URL: "https://api.example.com"

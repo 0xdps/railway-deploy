@@ -1,0 +1,149 @@
+# =============================================================================
+# deploy.example.yml — Generic Railway Deploy Config Template
+# =============================================================================
+# Copy this file and customise it for your project.
+# Rename it to: <your-project-name>.deploy.yml
+#
+# Usage:
+#   railway-deploy --project <RAILWAY_PROJECT_ID> --env production --config myapp.deploy.yml
+#   python3 railway.py --project <ID> --env staging --config myapp.deploy.yml
+#
+# Supported config formats: .yml / .yaml / .toml
+# =============================================================================
+
+project:
+  name: My App                  # displayed in logs and generated env file headers
+  prefix: myapp                 # prefix for Railway service/volume names
+
+# ── Infrastructure ─────────────────────────────────────────────────────────────
+# Provision managed database/cache services before app services.
+# Supported types: postgres | redis | mysql | mongo
+#
+# The deployer:
+#   1. Checks if a matching service already exists (fuzzy name match)
+#   2. If not, creates it as a Docker image service
+#   3. Sets default connection variables on the service
+#   4. Attaches a persistent volume
+#
+infra:
+  - name: postgres
+    type: postgres                           # one of: postgres | redis | mysql | mongo
+    image: ghcr.io/railwayapp-templates/postgres-ssl:18  # optional — override default image
+    volume: /var/lib/postgresql/data         # optional — where to mount the volume
+    volume_name: myapp-postgres-data         # optional — auto-derived if omitted
+    wait_seconds: 15                         # optional — wait after creation
+
+  - name: redis
+    type: redis
+    image: redis:8.2.1
+    volume: /data
+    volume_name: myapp-redis-data
+    wait_seconds: 5
+
+  # Uncomment to add MySQL:
+  # - name: mysql
+  #   type: mysql
+  #   image: mysql:9.4
+  #   volume: /var/lib/mysql
+  #   volume_name: myapp-mysql-data
+  #   wait_seconds: 20
+
+  # Uncomment to add MongoDB:
+  # - name: mongo
+  #   type: mongo
+  #   image: mongo:8.0
+  #   volume: /data/db
+  #   volume_name: myapp-mongo-data
+  #   wait_seconds: 15
+
+# ── Application services ────────────────────────────────────────────────────────
+# Deployed in the order listed here.
+# Each entry describes one Railway service.
+#
+services:
+  - name: api                              # short logical name — used in --service flag
+    railway_name: myapp-api                # full Railway service name
+    dockerfile: apps/api/Dockerfile        # path relative to repo root
+    branch: main                           # git branch to deploy (default: main)
+    # repo: owner/repo                     # optional — override auto-detected git remote
+
+    vars:
+      # ── Static values always set on this service ──────────────────────────
+      static:
+        NODE_ENV: production
+        PORT: "8080"
+
+      # ── Railway inter-service references ──────────────────────────────────
+      # Format: DEST_KEY: "<service-name>.<VARIABLE_NAME>"
+      # The deployer wraps it as ${{service-name.VARIABLE_NAME}} automatically.
+      references:
+        DATABASE_URL: myapp-postgres.DATABASE_URL
+        REDIS_URL: myapp-redis.REDIS_URL
+
+      # ── Keys pulled from your .env.<environment> file ─────────────────────
+      # Only keys with non-empty values are forwarded.
+      common:
+        - APP_SECRET
+        - JWT_SECRET
+        - ENCRYPTION_KEY
+        - RESEND_API_KEY
+        - ALLOWED_ORIGINS
+
+  - name: worker
+    railway_name: myapp-worker
+    dockerfile: apps/worker/Dockerfile
+    branch: main
+    vars:
+      static:
+        NODE_ENV: production
+        # Workers typically talk to the API over private networking:
+        API_URL: http://myapp-api.railway.internal:8080
+      references:
+        DATABASE_URL: myapp-postgres.DATABASE_URL
+        REDIS_URL: myapp-redis.REDIS_URL
+      common:
+        - APP_SECRET
+        - ENCRYPTION_KEY
+
+# ── Secrets auto-generated when env file is missing ─────────────────────────────
+# These are filled with cryptographically random hex values.
+# DO NOT rotate after first deploy — doing so invalidates all existing sessions/tokens.
+secrets:
+  - key: APP_SECRET
+    bytes: 32
+  - key: JWT_SECRET
+    bytes: 32
+  - key: ENCRYPTION_KEY
+    bytes: 32
+
+# ── Hard-required variables ───────────────────────────────────────────────────
+# Script exits immediately if any of these are missing or empty.
+required_vars:
+  - APP_SECRET
+  - JWT_SECRET
+  - ENCRYPTION_KEY
+
+# ── Soft-required variables ───────────────────────────────────────────────────
+# Script warns at the end but continues deploying.
+# Features depending on these keys won't work until they are filled in.
+soft_vars:
+  - RESEND_API_KEY
+  - ALLOWED_ORIGINS
+
+# ── Env file template ─────────────────────────────────────────────────────────
+# When the env file (.env.production / .env.staging) doesn't exist, the
+# deployer auto-creates it.  All keys listed under `secrets` are generated
+# automatically.  The keys below are written with their given values so the
+# operator knows what still needs to be filled in.
+env_template:
+  # Email
+  RESEND_API_KEY: "placeholder-set-me"
+
+  # CORS / redirect origins (comma-separated)
+  ALLOWED_ORIGINS: "https://app.example.com"
+
+  # Public URLs — update after Railway assigns domains
+  PUBLIC_URL: "https://myapp.up.railway.app"
+
+  # Misc
+  LOG_LEVEL: "info"
