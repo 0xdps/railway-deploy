@@ -160,6 +160,9 @@ def deploy_service(
     build_command = svc.get("build_command", "")
     start_command = svc.get("start_command", "")
     http_endpoint = svc.get("http_endpoint", False)
+    health_check = svc.get("health_check", {})
+    healthcheck_path = health_check.get("path", "")
+    healthcheck_timeout = int(health_check.get("timeout", 0))
 
     if not repo:
         die(f"Service '{name}' is missing 'repo' in config (e.g. repo: owner/repo-name)")
@@ -173,9 +176,23 @@ def deploy_service(
     if existing_id and public_client.has_env_instance(existing_id, env_id):
         service_id = existing_id
         info(f"Service '{name}' already exists ({service_id}) — updating in place")
+    elif existing_id:
+        # Service exists but has no instance in the target environment.
+        # Railway only creates ServiceInstances for environments that exist at creation time.
+        # serviceConnect (and other per-env mutations) fail with "ServiceInstance not found"
+        # when the target env instance is absent.
+        # Fix: delete and recreate WITHOUT environmentId so Railway creates instances in ALL environments.
+        warn(f"Service '{name}' ({existing_id}) has no instance in target environment — deleting and recreating...")
+        public_client.delete_service(existing_id)
+        public_client.invalidate()
+        info(f"Creating service '{name}' (no source, no environmentId — instances in all envs)")
+        service_id = public_client.create_service(project_id, name)
+        public_client.invalidate()
+        existing_id = None  # treat as brand new for the deploy path below
+        ok(f"Service recreated -> {service_id}")
     else:
         info(f"Creating service '{name}' (no source yet — avoids premature deploy)")
-        service_id = public_client.create_service(project_id, env_id, name)
+        service_id = public_client.create_service(project_id, name)
         public_client.invalidate()
         ok(f"Service created -> {service_id}")
 
@@ -185,8 +202,10 @@ def deploy_service(
         dockerfile_path=dockerfile,
         build_command=build_command,
         start_command=start_command,
+        healthcheck_path=healthcheck_path,
+        healthcheck_timeout=healthcheck_timeout,
     )
-    ok(f"Build config applied (dockerfile={dockerfile or 'none'})")
+    ok(f"Build config applied (dockerfile={dockerfile or 'none'}, healthcheck={healthcheck_path or 'none'})")
 
     if http_endpoint:
         try:

@@ -96,8 +96,8 @@ class PublicClient:
         except RuntimeError:
             return True
 
-    def create_service(self, project_id: str, env_id: str, name: str) -> str:
-        """Create a service with no repo source so no auto-deploy is triggered."""
+    def create_service(self, project_id: str, name: str) -> str:
+        """Create a service with no repo/environmentId so Railway creates instances in ALL environments."""
         data = self._gql(
             """mutation($input: ServiceCreateInput!) {
               serviceCreate(input: $input) { id name }
@@ -105,12 +105,20 @@ class PublicClient:
             {
                 "input": {
                     "projectId": project_id,
-                    "environmentId": env_id,
                     "name": name,
                 }
             },
         )
         return data["serviceCreate"]["id"]
+
+    def delete_service(self, service_id: str) -> None:
+        """Delete a service (and all its instances/deployments)."""
+        self._gql(
+            """mutation($id: String!) {
+              serviceDelete(id: $id)
+            }""",
+            {"id": service_id},
+        )
 
     def connect_service(self, service_id: str, repo: str, branch: str) -> None:
         self._gql(
@@ -142,6 +150,8 @@ class PublicClient:
         dockerfile_path: str = "",
         build_command: str = "",
         start_command: str = "",
+        healthcheck_path: str = "",
+        healthcheck_timeout: int = 0,
     ) -> None:
         payload: dict[str, Any] = {}
         if dockerfile_path:
@@ -152,6 +162,10 @@ class PublicClient:
             payload["buildCommand"] = build_command
         if start_command:
             payload["startCommand"] = start_command
+        if healthcheck_path:
+            payload["healthcheckPath"] = healthcheck_path
+        if healthcheck_timeout:
+            payload["healthcheckTimeout"] = healthcheck_timeout
         if not payload:
             return
         self._gql(
