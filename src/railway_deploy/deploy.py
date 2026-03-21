@@ -122,7 +122,7 @@ def deploy_service(
     env_vars: dict[str, str],
     public_client: PublicClient,
     no_deploy: bool = False,
-) -> None:
+) -> str:
     name = svc["railway_name"]
     repo = svc.get("repo", "")
     branch = svc.get("branch", "main")
@@ -172,9 +172,12 @@ def deploy_service(
         # No explicit deploy() call needed — it would cause a second deployment.
         ok("Deployment auto-triggered by Railway on service creation")
 
+    return service_id
 
-def print_project_summary(public_client: PublicClient, project_id: str, env_id: str) -> None:
+
+def print_project_summary(public_client: PublicClient, project_id: str, env_id: str, deployed_ids: set[str] | None = None) -> None:
     public_client.invalidate()
     print("\n  Services in environment:")
     for service in sorted(public_client.list_services(project_id, env_id), key=lambda item: item["name"]):
-        print(f"    {service['name']}  ({service['id']})")
+        marker = "> " if deployed_ids and service["id"] in deployed_ids else "  "
+        print(f"   {marker}{service['name']}  ({service['id']})")

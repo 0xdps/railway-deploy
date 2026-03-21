@@ -71,10 +71,12 @@ def main() -> None:
         valid = ", ".join(service["name"] for service in config.services)
         die(f"Service '{args.service}' not found. Valid names: {valid}")
 
+    deployed_ids = set()
     for service in services:
-        deploy_service(service, args.project, env_id, env_vars, public_client, no_deploy=args.no_deploy)
+        service_id = deploy_service(service, args.project, env_id, env_vars, public_client, no_deploy=args.no_deploy)
+        deployed_ids.add(service_id)
 
-    print_project_summary(public_client, args.project, env_id)
+    print_project_summary(public_client, args.project, env_id, deployed_ids)
     print("\n  Done!\n")
 
 
