@@ -1,0 +1,40 @@
+src/railway_deploy/deploy.py
+  c760970374f7b282 125,175,178,182-183
+src/railway_deploy/cli.py
+  c760970374f7b282 74,76-77,79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.15",
+  "base_commit_sha": "54720eef51e807d07618bb8c63837e7051b6960b",
+  "prompts": {
+    "2ebf4ec28e880b59": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "2350dadb-628b-45ca-a758-a07c0994ef1a",
+        "model": "copilot/auto"
+      },
+      "human_author": "Devendra Pratap Singh <dps.manit@gmail.com>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 14,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/a286d8a623a34232f5c21d3ef0d5b38b492e8b32dea18215a2015de39f170dd6"
+    },
+    "c760970374f7b282": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "817551dc-517e-4d50-a01f-0bac22231ac7",
+        "model": "copilot/claude-sonnet-4.6"
+      },
+      "human_author": "Devendra Pratap Singh <dps.manit@gmail.com>",
+      "messages": [],
+      "total_additions": 18,
+      "total_deletions": 9,
+      "accepted_lines": 10,
+      "overriden_lines": 0,
+      "messages_url": "https://usegitai.com/cas/add223aeca7431753f1546a76ca8207c314468dcbb59008b567cd47d18234a3e"
+    }
+  }
+}
