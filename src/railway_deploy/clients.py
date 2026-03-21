@@ -56,13 +56,21 @@ class PublicClient:
             die(f"Environment '{env_name}' not found in project '{project_id}'")
         return self._env_cache[cache_key]
 
-    def list_services(self, project_id: str) -> list[dict]:
+    def list_services(self, project_id: str, env_id: str | None = None) -> list[dict]:
         if self._svc_cache is None:
             data = self._gql(
-                "query($id:String!){project(id:$id){services{edges{node{id name}}}}}",
+                "query($id:String!){project(id:$id){services{edges{node{id name serviceInstances{edges{node{environmentId}}}}}}}}" ,
                 {"id": project_id},
             )
-            self._svc_cache = [edge["node"] for edge in data["project"]["services"]["edges"]]
+            self._svc_cache = [
+                {"id": edge["node"]["id"], "name": edge["node"]["name"], "env_ids": [
+                    inst["node"]["environmentId"]
+                    for inst in edge["node"]["serviceInstances"]["edges"]
+                ]}
+                for edge in data["project"]["services"]["edges"]
+            ]
+        if env_id is not None:
+            return [s for s in self._svc_cache if env_id in s["env_ids"]]
         return self._svc_cache
 
     def find_service_id(self, project_id: str, name: str) -> str | None:
@@ -88,7 +96,7 @@ class PublicClient:
         except RuntimeError:
             return True
 
-    def create_service(self, project_id: str, name: str, repo: str, branch: str) -> str:
+    def create_service(self, project_id: str, env_id: str, name: str, repo: str, branch: str) -> str:
         data = self._gql(
             """mutation($input: ServiceCreateInput!) {
               serviceCreate(input: $input) { id name }
@@ -96,6 +104,7 @@ class PublicClient:
             {
                 "input": {
                     "projectId": project_id,
+                    "environmentId": env_id,
                     "name": name,
                     "source": {"repo": repo},
                     "branch": branch,
@@ -134,7 +143,6 @@ class PublicClient:
         dockerfile_path: str = "",
         build_command: str = "",
         start_command: str = "",
-        **kwargs: Any,
     ) -> None:
         payload: dict[str, Any] = {}
         if dockerfile_path:
@@ -145,9 +153,6 @@ class PublicClient:
             payload["buildCommand"] = build_command
         if start_command:
             payload["startCommand"] = start_command
-        for key, value in kwargs.items():
-            if value is not None:
-                payload[key] = value
         if not payload:
             return
         self._gql(
@@ -156,6 +161,16 @@ class PublicClient:
             }""",
             {"s": service_id, "e": env_id, "input": payload},
         )
+
+    def create_service_domain(self, service_id: str, env_id: str) -> str:
+        """Create a Railway-generated public HTTP endpoint for a service."""
+        data = self._gql(
+            """mutation($input: ServiceDomainCreateInput!) {
+              serviceDomainCreate(input: $input) { id domain }
+            }""",
+            {"input": {"serviceId": service_id, "environmentId": env_id}},
+        )
+        return data["serviceDomainCreate"]["domain"]
 
     def deploy(self, service_id: str, env_id: str) -> None:
         self._gql(

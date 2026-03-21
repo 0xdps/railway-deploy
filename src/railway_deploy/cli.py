@@ -74,7 +74,7 @@ def main() -> None:
     for service in services:
         deploy_service(service, args.project, env_id, env_vars, public_client, no_deploy=args.no_deploy)
 
-    print_project_summary(public_client, args.project)
+    print_project_summary(public_client, args.project, env_id)
     print("\n  Done!\n")
 
 

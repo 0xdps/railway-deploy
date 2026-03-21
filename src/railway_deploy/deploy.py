@@ -129,6 +129,7 @@ def deploy_service(
     dockerfile = svc.get("dockerfile", "")
     build_command = svc.get("build_command", "")
     start_command = svc.get("start_command", "")
+    http_endpoint = svc.get("http_endpoint", False)
 
     if not repo:
         die(f"Service '{name}' is missing 'repo' in config (e.g. repo: owner/repo-name)")
@@ -138,10 +139,9 @@ def deploy_service(
     suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
     deployed_name = f"{name}-{suffix}"
     info(f"Creating service '{deployed_name}' from {repo}@{branch}")
-    service_id = public_client.create_service(project_id, deployed_name, repo, branch)
+    service_id = public_client.create_service(project_id, env_id, deployed_name, repo, branch)
     public_client.invalidate()
     ok(f"Service created -> {service_id}")
-    is_new = True
 
     public_client.update_instance(
         service_id,
@@ -152,24 +152,29 @@ def deploy_service(
     )
     ok(f"Build config applied (dockerfile={dockerfile or 'none'})")
 
+    if http_endpoint:
+        try:
+            domain = public_client.create_service_domain(service_id, env_id)
+            ok(f"Public HTTP endpoint created -> https://{domain}")
+        except RuntimeError as exc:
+            warn(f"Could not create public endpoint (may already exist): {exc}")
+
     variables = build_service_vars(svc, env_vars)
     for key, value in variables.items():
         info(f"  {key} = {mask(key, value)}")
     public_client.set_variables(project_id, env_id, service_id, variables)
     ok(f"Variables set ({len(variables)} keys)")
 
-    if no_deploy and not is_new:
-        info("Skipping manual deploy trigger (GitHub auto-deploy will handle it)")
-    elif is_new:
-        public_client.deploy(service_id, env_id)
-        ok("Deployment triggered")
+    if no_deploy:
+        info("Skipping manual deploy trigger (--no-deploy flag set)")
     else:
-        public_client.redeploy(service_id, env_id)
-        ok("Redeployment triggered")
+        # Railway auto-deploys on serviceCreate when a repo source is connected.
+        # No explicit deploy() call needed — it would cause a second deployment.
+        ok("Deployment auto-triggered by Railway on service creation")
 
 
-def print_project_summary(public_client: PublicClient, project_id: str) -> None:
+def print_project_summary(public_client: PublicClient, project_id: str, env_id: str) -> None:
     public_client.invalidate()
-    print("\n  Services in project:")
-    for service in sorted(public_client.list_services(project_id), key=lambda item: item["name"]):
+    print("\n  Services in environment:")
+    for service in sorted(public_client.list_services(project_id, env_id), key=lambda item: item["name"]):
         print(f"    {service['name']}  ({service['id']})")
