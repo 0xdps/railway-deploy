@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import json
 import os
-import random
 import secrets as _secrets
-import string
 import time
 import uuid
 from pathlib import Path
@@ -168,12 +166,18 @@ def deploy_service(
 
     step(f"Deploying {name}")
 
-    suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
-    deployed_name = f"{name}-{suffix}"
-    info(f"Creating service '{deployed_name}' (no source yet — avoids premature deploy)")
-    service_id = public_client.create_service(project_id, env_id, deployed_name)
-    public_client.invalidate()
-    ok(f"Service created -> {service_id}")
+    # Use the exact railway_name — no random suffix — so Railway private networking
+    # (e.g. nubeauth-core.railway.internal) resolves correctly between services.
+    # If a service with this name already exists, update it in place.
+    existing_id = public_client.find_service_id(project_id, name)
+    if existing_id and public_client.has_env_instance(existing_id, env_id):
+        service_id = existing_id
+        info(f"Service '{name}' already exists ({service_id}) — updating in place")
+    else:
+        info(f"Creating service '{name}' (no source yet — avoids premature deploy)")
+        service_id = public_client.create_service(project_id, env_id, name)
+        public_client.invalidate()
+        ok(f"Service created -> {service_id}")
 
     public_client.update_instance(
         service_id,
@@ -200,9 +204,18 @@ def deploy_service(
     if no_deploy:
         info(f"Skipping repo connection (--no-deploy flag set) — connect manually: {repo}@{branch}")
     else:
-        info(f"Connecting repo {repo}@{branch} — triggers first (and only) deployment...")
-        public_client.connect_service(service_id, repo, branch)
-        ok("Repo connected — Railway deployment triggered")
+        if existing_id and public_client.has_env_instance(existing_id, env_id):
+            # Service already has a repo — just trigger a redeploy with updated vars/config
+            info(f"Redeploying existing service {name}...")
+            try:
+                public_client.redeploy(service_id, env_id)
+                ok("Redeploy triggered")
+            except RuntimeError as exc:
+                warn(f"Redeploy trigger failed (may deploy automatically): {exc}")
+        else:
+            info(f"Connecting repo {repo}@{branch} — triggers first (and only) deployment...")
+            public_client.connect_service(service_id, repo, branch)
+            ok("Repo connected — Railway deployment triggered")
 
     return service_id
 
