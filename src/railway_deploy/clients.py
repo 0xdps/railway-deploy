@@ -96,7 +96,8 @@ class PublicClient:
         except RuntimeError:
             return True
 
-    def create_service(self, project_id: str, env_id: str, name: str, repo: str, branch: str) -> str:
+    def create_service(self, project_id: str, env_id: str, name: str) -> str:
+        """Create a service with no repo source so no auto-deploy is triggered."""
         data = self._gql(
             """mutation($input: ServiceCreateInput!) {
               serviceCreate(input: $input) { id name }
@@ -106,8 +107,6 @@ class PublicClient:
                     "projectId": project_id,
                     "environmentId": env_id,
                     "name": name,
-                    "source": {"repo": repo},
-                    "branch": branch,
                 }
             },
         )

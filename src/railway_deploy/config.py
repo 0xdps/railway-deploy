@@ -17,6 +17,9 @@ class Config:
         self.workspace_id: str = proj.get("workspace_id", "")
         self.infra: list[dict] = raw.get("infra", [])
         self.services: list[dict] = raw.get("services", [])
+        self.secrets: list[dict] = raw.get("secrets", [])
+        self.required_vars: list[str] = raw.get("required_vars", [])
+        self.soft_vars: list[str] = raw.get("soft_vars", [])
 
     @classmethod
     def load(cls, path: Path) -> "Config":

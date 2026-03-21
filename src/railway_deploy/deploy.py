@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import random
+import secrets as _secrets
 import string
 import time
 import uuid
@@ -49,6 +50,37 @@ def load_env_file(path: Path) -> dict[str, str]:
         if key:
             result[key] = value
     return result
+
+
+def generate_secrets(config: "Config", env_vars: dict[str, str]) -> dict[str, str]:
+    """Generate cryptographically secure values for any secret that is absent or empty."""
+    from .config import Config  # local import avoids circular dep at module level
+    generated = []
+    for secret in config.secrets:
+        key = secret.get("key", "")
+        n_bytes = int(secret.get("bytes", 32))
+        if key and not env_vars.get(key):
+            env_vars[key] = _secrets.token_hex(n_bytes)
+            generated.append(f"{key} ({n_bytes} bytes)")
+    if generated:
+        info(f"Auto-generated secrets: {', '.join(generated)}")
+    return env_vars
+
+
+def check_required_vars(config: "Config", env_vars: dict[str, str]) -> None:
+    """Die if any hard-required variable is still missing after secret generation."""
+    from .config import Config  # local import avoids circular dep at module level
+    missing = [k for k in config.required_vars if not env_vars.get(k)]
+    if missing:
+        die(f"Missing required variables: {', '.join(missing)}\n  Add them to your env file.")
+
+
+def check_soft_vars(config: "Config", env_vars: dict[str, str]) -> None:
+    """Warn for soft-required variables that are empty (features may be degraded)."""
+    from .config import Config  # local import avoids circular dep at module level
+    for key in config.soft_vars:
+        if not env_vars.get(key):
+            warn(f"Optional variable '{key}' is empty — related features may be disabled")
 
 
 def resolve_token() -> str:
@@ -138,8 +170,8 @@ def deploy_service(
 
     suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
     deployed_name = f"{name}-{suffix}"
-    info(f"Creating service '{deployed_name}' from {repo}@{branch}")
-    service_id = public_client.create_service(project_id, env_id, deployed_name, repo, branch)
+    info(f"Creating service '{deployed_name}' (no source yet — avoids premature deploy)")
+    service_id = public_client.create_service(project_id, env_id, deployed_name)
     public_client.invalidate()
     ok(f"Service created -> {service_id}")
 
@@ -166,11 +198,11 @@ def deploy_service(
     ok(f"Variables set ({len(variables)} keys)")
 
     if no_deploy:
-        info("Skipping manual deploy trigger (--no-deploy flag set)")
+        info(f"Skipping repo connection (--no-deploy flag set) — connect manually: {repo}@{branch}")
     else:
-        # Railway auto-deploys on serviceCreate when a repo source is connected.
-        # No explicit deploy() call needed — it would cause a second deployment.
-        ok("Deployment auto-triggered by Railway on service creation")
+        info(f"Connecting repo {repo}@{branch} — triggers first (and only) deployment...")
+        public_client.connect_service(service_id, repo, branch)
+        ok("Repo connected — Railway deployment triggered")
 
     return service_id
 

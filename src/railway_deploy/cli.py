@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .clients import InternalClient, PublicClient
 from .config import Config
-from .deploy import deploy_infra, deploy_service, load_env_file, print_project_summary, resolve_token
+from .deploy import deploy_infra, deploy_service, generate_secrets, check_required_vars, check_soft_vars, load_env_file, print_project_summary, resolve_token
 from .output import die, warn
 
 
@@ -46,6 +46,9 @@ def main() -> None:
 
     env_file = Path(args.env_file).resolve() if args.env_file else Path.cwd() / f".env.{args.env}"
     env_vars = load_env_file(env_file)
+    env_vars = generate_secrets(config, env_vars)
+    check_required_vars(config, env_vars)
+    check_soft_vars(config, env_vars)
 
     token = resolve_token()
     public_client = PublicClient(token)
