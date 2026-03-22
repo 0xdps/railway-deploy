@@ -185,6 +185,9 @@ def deploy_service(
     health_check = svc.get("health_check", {})
     healthcheck_path = health_check.get("path", "")
     healthcheck_timeout = int(health_check.get("timeout", 0))
+    resources = svc.get("resources", {})
+    cpu_limit: float | None = float(resources["cpu"]) if "cpu" in resources else None
+    memory_limit: int | None = int(resources["memory"]) if "memory" in resources else None
 
     if not repo:
         die(f"Service '{name}' is missing 'repo' in config (e.g. repo: owner/repo-name)")
@@ -226,8 +229,18 @@ def deploy_service(
         start_command=start_command,
         healthcheck_path=healthcheck_path,
         healthcheck_timeout=healthcheck_timeout,
+        cpu_limit=cpu_limit,
+        memory_limit=memory_limit,
     )
-    ok(f"Build config applied (dockerfile={dockerfile or 'none'}, healthcheck={healthcheck_path or 'none'})")
+    resource_info = ""
+    if cpu_limit is not None or memory_limit is not None:
+        parts = []
+        if cpu_limit is not None:
+            parts.append(f"cpu={cpu_limit}vCPU")
+        if memory_limit is not None:
+            parts.append(f"mem={memory_limit}MB")
+        resource_info = f", resources={' '.join(parts)}"
+    ok(f"Build config applied (dockerfile={dockerfile or 'none'}, healthcheck={healthcheck_path or 'none'}{resource_info})")
 
     if http_endpoint:
         try:

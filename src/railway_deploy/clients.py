@@ -152,6 +152,8 @@ class PublicClient:
         start_command: str = "",
         healthcheck_path: str = "",
         healthcheck_timeout: int = 0,
+        cpu_limit: float | None = None,
+        memory_limit: int | None = None,
     ) -> None:
         payload: dict[str, Any] = {}
         if dockerfile_path:
@@ -166,6 +168,10 @@ class PublicClient:
             payload["healthcheckPath"] = healthcheck_path
         if healthcheck_timeout:
             payload["healthcheckTimeout"] = healthcheck_timeout
+        if cpu_limit is not None:
+            payload["cpuLimit"] = cpu_limit
+        if memory_limit is not None:
+            payload["memoryLimit"] = memory_limit
         if not payload:
             return
         self._gql(
