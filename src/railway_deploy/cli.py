@@ -8,7 +8,7 @@ from pathlib import Path
 from .clients import InternalClient, PublicClient
 from .config import Config
 from .deploy import deploy_infra, deploy_service, generate_secrets, check_required_vars, check_soft_vars, load_env_file, print_project_summary, resolve_token
-from .output import die, warn
+from .output import die, info, warn
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -20,6 +20,7 @@ Examples:
     railway-deploy --project <ID> --env staging --config examples/configs/basic.deploy.yml
     railway-deploy --project <ID> --env staging --config examples/configs/nube-auth.deploy.yml --skip-infra
     railway-deploy --project <ID> --env staging --config examples/configs/nube-auth.deploy.yml --service core
+    railway-deploy --project <ID> --env staging --config examples/configs/nube-auth.deploy.yml --postfix v2
 """,
     )
     parser.add_argument("--project", required=True, help="Railway project ID")
@@ -28,6 +29,12 @@ Examples:
     parser.add_argument("--service", default="all", help="Deploy a single service by name (default: all)")
     parser.add_argument("--skip-infra", action="store_true", help="Skip infra provisioning")
     parser.add_argument("--env-file", help="Path to env file (default: .env.<env>)")
+    parser.add_argument(
+        "--postfix",
+        default="",
+        help="Optional suffix appended to all service names (e.g. v2, canary). "
+             "Produces names like {prefix}-{env}-{service}-{postfix}.",
+    )
     parser.add_argument(
         "--no-deploy",
         action="store_true",
@@ -56,14 +63,23 @@ def main() -> None:
 
     env_id = public_client.get_env_id(args.project, args.env)
 
+    # Pre-compute all Railway service names following the naming convention.
+    # Pattern: {prefix}-{env}-{service}[-{postfix}]
+    service_name_map = config.build_name_map(args.env, args.postfix)
+    pattern = f"{config.prefix}-{args.env}-{{service}}" + (f"-{args.postfix}" if args.postfix else "")
+    info(f"Name pattern: {pattern}")
+
     print(f"\n  Project   {args.project}")
     print(f"  Env       {args.env} -> {env_id}")
     print(f"  Config    {config_path}")
-    print(f"  Env file  {env_file}\n")
+    print(f"  Env file  {env_file}")
+    if args.postfix:
+        print(f"  Postfix   {args.postfix}")
+    print()
 
     if not args.skip_infra:
         for infra in config.infra:
-            deploy_infra(config, infra, args.project, env_id, public_client, internal_client)
+            deploy_infra(config, infra, args.project, env_id, public_client, internal_client, service_name_map=service_name_map)
     else:
         warn("Skipping infra provisioning (--skip-infra)")
 
@@ -76,7 +92,15 @@ def main() -> None:
 
     deployed_ids = set()
     for service in services:
-        service_id = deploy_service(service, args.project, env_id, env_vars, public_client, no_deploy=args.no_deploy)
+        service_id = deploy_service(
+            service,
+            args.project,
+            env_id,
+            env_vars,
+            public_client,
+            no_deploy=args.no_deploy,
+            service_name_map=service_name_map,
+        )
         deployed_ids.add(service_id)
 
     print_project_summary(public_client, args.project, env_id, deployed_ids)
@@ -85,3 +109,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

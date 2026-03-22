@@ -15,20 +15,38 @@ from .output import die, info, mask, ok, step, warn
 from .templates import INFRA_TEMPLATES
 
 
-def build_service_vars(service: dict, env_vars: dict[str, str]) -> dict[str, str]:
+import re as _re
+
+
+def _resolve_refs(value: str, service_name_map: dict[str, str]) -> str:
+    """Replace {ref:<name>} placeholders with computed Railway service names."""
+    return _re.sub(
+        r"\{ref:([^}]+)\}",
+        lambda m: service_name_map.get(m.group(1), m.group(0)),
+        value,
+    )
+
+
+def build_service_vars(
+    service: dict,
+    env_vars: dict[str, str],
+    service_name_map: dict[str, str] | None = None,
+) -> dict[str, str]:
     """Build final variable dict from one service config block."""
     result: dict[str, str] = {}
     cfg = service.get("vars", {})
+    name_map = service_name_map or {}
 
     for key, value in cfg.get("static", {}).items():
-        result[key] = str(value)
+        result[key] = _resolve_refs(str(value), name_map)
 
     for key in cfg.get("common", []):
         if value := env_vars.get(key):
             result[key] = value
 
     for destination, ref in cfg.get("references", {}).items():
-        result[destination] = ref if ref.startswith("${{") else f"${{{{{ref}}}}}"
+        resolved = _resolve_refs(str(ref), name_map)
+        result[destination] = resolved if resolved.startswith("${{") else f"${{{{{resolved}}}}}"
 
     return result
 
@@ -103,6 +121,7 @@ def deploy_infra(
     env_id: str,
     public_client: PublicClient,
     internal_client: InternalClient,
+    service_name_map: dict[str, str] | None = None,
 ) -> None:
     infra_type = (infra.get("type") or infra.get("name", "")).lower()
     template = INFRA_TEMPLATES.get(infra_type)
@@ -111,7 +130,8 @@ def deploy_infra(
         return
 
     template_id, default_image, build_fn, wait_seconds = template
-    name = infra.get("railway_name") or f"{cfg.prefix}-{infra_type}"
+    name_map = service_name_map or {}
+    name = infra.get("railway_name") or name_map.get(infra["name"]) or f"{cfg.prefix}-{infra_type}"
     image = infra.get("image") or default_image
 
     step(f"Provisioning {infra_type.capitalize()}")
@@ -152,8 +172,10 @@ def deploy_service(
     env_vars: dict[str, str],
     public_client: PublicClient,
     no_deploy: bool = False,
+    service_name_map: dict[str, str] | None = None,
 ) -> str:
-    name = svc["railway_name"]
+    name_map = service_name_map or {}
+    name = svc.get("railway_name") or name_map.get(svc["name"]) or svc["name"]
     repo = svc.get("repo", "")
     branch = svc.get("branch", "main")
     dockerfile = svc.get("dockerfile", "")
@@ -214,7 +236,7 @@ def deploy_service(
         except RuntimeError as exc:
             warn(f"Could not create public endpoint (may already exist): {exc}")
 
-    variables = build_service_vars(svc, env_vars)
+    variables = build_service_vars(svc, env_vars, name_map)
     for key, value in variables.items():
         info(f"  {key} = {mask(key, value)}")
     public_client.set_variables(project_id, env_id, service_id, variables)
