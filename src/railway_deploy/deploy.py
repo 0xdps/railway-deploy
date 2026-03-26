@@ -210,16 +210,28 @@ def deploy_service(
         warn(f"Service '{name}' ({existing_id}) has no instance in target environment — deleting and recreating...")
         public_client.delete_service(existing_id)
         public_client.invalidate()
-        info(f"Creating service '{name}' (no source, no environmentId — instances in all envs)")
-        service_id = public_client.create_service(project_id, name)
+        info(f"Creating service '{name}' (no source yet, env={env_id})")
+        service_id = public_client.create_service(project_id, name, env_id)
         public_client.invalidate()
         existing_id = None  # treat as brand new for the deploy path below
         ok(f"Service recreated -> {service_id}")
     else:
         info(f"Creating service '{name}' (no source yet — avoids premature deploy)")
-        service_id = public_client.create_service(project_id, name)
+        service_id = public_client.create_service(project_id, name, env_id)
         public_client.invalidate()
         ok(f"Service created -> {service_id}")
+
+    # Railway provisions ServiceInstances asynchronously after creation.
+    # Brief initial wait so the service record is visible before polling.
+    time.sleep(2)
+    # Poll until the instance for the target environment is ready (max ~30s).
+    for _attempt in range(30):
+        if public_client.has_env_instance(service_id, env_id):
+            break
+        info(f"Waiting for ServiceInstance to be ready... ({_attempt + 1}/30)")
+        time.sleep(1)
+    else:
+        die(f"ServiceInstance for service '{name}' in environment '{env_id}' never became ready")
 
     public_client.update_instance(
         service_id,
@@ -239,8 +251,8 @@ def deploy_service(
             parts.append(f"cpu={cpu_limit}vCPU")
         if memory_limit is not None:
             parts.append(f"mem={memory_limit}MB")
-        resource_info = f", resources={' '.join(parts)}"
-    ok(f"Build config applied (dockerfile={dockerfile or 'none'}, healthcheck={healthcheck_path or 'none'}{resource_info})")
+        resource_info = f" (NOTE: resource limits [{' '.join(parts)}] must be set in Railway dashboard — not supported via API)"
+    ok(f"Build config applied (dockerfile={dockerfile or 'none'}, healthcheck={healthcheck_path or 'none'}){resource_info}")
 
     if http_endpoint:
         try:

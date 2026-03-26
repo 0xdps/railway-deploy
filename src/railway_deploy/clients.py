@@ -94,20 +94,17 @@ class PublicClient:
                 for edge in data["service"]["serviceInstances"]["edges"]
             )
         except RuntimeError:
-            return True
+            # Transient error — service may not be registered yet; keep polling
+            return False
 
-    def create_service(self, project_id: str, name: str) -> str:
-        """Create a service with no repo/environmentId so Railway creates instances in ALL environments."""
+    def create_service(self, project_id: str, name: str, env_id: str | None = None) -> str:
+        """Create a service without a source, letting Railway provision ServiceInstances
+        for all environments. The caller should then poll has_env_instance() before use."""
         data = self._gql(
             """mutation($input: ServiceCreateInput!) {
               serviceCreate(input: $input) { id name }
             }""",
-            {
-                "input": {
-                    "projectId": project_id,
-                    "name": name,
-                }
-            },
+            {"input": {"projectId": project_id, "name": name}},
         )
         return data["serviceCreate"]["id"]
 
@@ -168,10 +165,8 @@ class PublicClient:
             payload["healthcheckPath"] = healthcheck_path
         if healthcheck_timeout:
             payload["healthcheckTimeout"] = healthcheck_timeout
-        if cpu_limit is not None:
-            payload["cpuLimit"] = cpu_limit
-        if memory_limit is not None:
-            payload["memoryLimit"] = memory_limit
+        # cpuLimit / memoryLimit are not accepted by Railway's public serviceInstanceUpdate
+        # API (returns HTTP 400). Resource limits must be configured in the Railway dashboard.
         if not payload:
             return
         self._gql(
